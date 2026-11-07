@@ -79,6 +79,7 @@
   /* ---------- 正文块 ---------- */
   var content = document.getElementById("content");
   var blocks = PAGE.blocks || [];
+  var players = []; // 已注册的音频播放器（声明要放在渲染之前，见 buildAudio）
 
   blocks.forEach(function (b) {
     if (!b || !b.type) return;
@@ -152,8 +153,6 @@
   });
 
   /* ---------- 音频播放器 ---------- */
-  var players = [];
-
   function buildAudio(item) {
     var wrap = el("div", "audio-item");
     wrap.innerHTML =
