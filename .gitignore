@@ -4,3 +4,9 @@ __pycache__/
 .github-token
 keys.txt
 .keys-state.json
+
+# >>> protected (build.py auto-managed) <<<
+milkdragon/content.md
+milkdragon/assets/*
+!milkdragon/assets/qr.png
+# <<< protected <<<
