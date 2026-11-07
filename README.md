@@ -71,7 +71,43 @@ python3 make_qr.py https://<你的用户名>.github.io/my-page/
 
 ---
 
-## 二、改内容（唯一需要动的文件）
+## 二、改内容
+
+### 方式一：写 Markdown（推荐）
+
+编辑 `milkdragon/content.md`，改完一键上线：
+
+```bash
+./deploy.sh "这次改了什么"
+```
+
+（= 编译 `content.md` → `content.js` → 提交 → 推送，一步到位）
+
+**头部配置**（`---` 之间）：
+
+```yaml
+title: 秋日手记          # 标签页标题 + 大标题
+description: …           # 分享卡片描述
+cover: assets/piggy.jpg  # 首屏大图
+kicker: 2026 · 十一月     # 标题上方小字
+subtitle: 第一行\n第二行   # 副标题，\n 换行
+meta: 文 / 图 / 声音 · Eason
+footer_note: …           # 页脚说明
+```
+
+**正文**就是标准 Markdown，另有三条约定：
+
+| 写法 | 效果 |
+|---|---|
+| `![说明](assets/a.jpg "图注")` 单独一行 | 大图 + 图注，点击全屏 |
+| 连续多行图片（每行一张） | 自动拼成图片网格 |
+| `::: audio` <br> `assets/v.m4a \| 标题 \| 说明` <br> `:::` | 音频播放器 |
+
+其余（`#` 标题、`**粗体**`、`> 引文`、`1. 列表`、`---` 分隔线、`[文字](链接)`、行内代码、表格）都按标准 Markdown 渲染。
+
+> 注意：`content.js` 是编译产物，会被覆盖，**不要手改它**——内容只改 `content.md`。
+
+### 方式二：直接改 content.js（进阶）
 
 打开 `content.js`，改这几处就行：
 
@@ -131,13 +167,18 @@ afconvert -f m4af -d aac -b 64000 录音.wav assets/voice.m4a
 
 ```
 qr-page/
-├── index.html          页面骨架（一般不用改）
-├── content.js          ★ 所有内容在这里
-├── css/style.css       样式（颜色改文件顶部的变量）
-├── js/render.js        渲染 + 音频播放器 + 大图查看
-├── assets/             图片、音频、二维码
-├── make_qr.py          网址 → 二维码
-├── requirements.txt    二维码脚本的依赖
+├── deploy.sh           ★ 一键更新（编译 + 提交 + 推送）
+├── milkdragon/         子页面（线上 …/Cecilia/milkdragon/）
+│   ├── content.md      ★ 所有内容在这里（Markdown）
+│   ├── build.py        content.md → content.js
+│   ├── content.js      编译产物，页面实际读取
+│   ├── index.html      页面骨架（一般不用改）
+│   ├── css/style.css   样式（颜色改文件顶部的变量）
+│   ├── js/render.js    渲染 + 音频播放器 + 大图查看
+│   ├── js/md-*.js      （无）Markdown 在编译期已转 HTML
+│   ├── make_qr.py      网址 → 二维码
+│   ├── requirements.txt
+│   └── assets/         图片、音频、二维码
 └── .nojekyll           告诉 GitHub Pages 别用 Jekyll 处理（保留，别删）
 ```
 

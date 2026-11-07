@@ -81,6 +81,23 @@
   var blocks = PAGE.blocks || [];
   var players = []; // 已注册的音频播放器（声明要放在渲染之前，见 buildAudio）
 
+  // Markdown 路线：content.md 经 build.py 编译成整段 HTML
+  if (PAGE.html) {
+    content.innerHTML = PAGE.html;
+    Array.prototype.forEach.call(content.children, function (n) {
+      n.classList.add("reveal");
+    });
+    Array.prototype.forEach.call(
+      content.querySelectorAll(".block-audio[data-items]"),
+      function (box) {
+        JSON.parse(box.dataset.items).forEach(function (it) {
+          box.appendChild(buildAudio(it));
+        });
+        box.removeAttribute("data-items");
+      }
+    );
+  }
+
   blocks.forEach(function (b) {
     if (!b || !b.type) return;
     var node = null;
