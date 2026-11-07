@@ -3,6 +3,12 @@
 一个纯静态页面：文字、照片、录音放在同一页，挂到 GitHub Pages 上，生成二维码，手机一扫就能看。
 没有后端、没有数据库、不要服务器钱，改内容只要改一个文件。
 
+> **本项目实际部署**
+> 仓库：`0100-000-1011/Cecilia`，页面放在 `milkdragon/` 子目录里
+> 线上网址：`https://0100-000-1011.github.io/Cecilia/milkdragon/`
+> 生成二维码：`cd milkdragon && python3 make_qr.py https://0100-000-1011.github.io/Cecilia/milkdragon/`
+> 根目录 `/` 没有首页，直接访问会是 404，属正常。要加别的子页面，照着 `milkdragon/` 再复制一个文件夹即可。
+
 ---
 
 ## 一、5 分钟上线
