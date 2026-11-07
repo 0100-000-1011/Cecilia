@@ -1,18 +1,12 @@
 /* ============================================================
- *  渲染引擎：把 content.js 里的数据变成页面
+ *  渲染引擎：把内容数据变成页面
  *  一般不需要改这个文件，除非你想加新的块类型
  * ============================================================ */
 (function () {
   "use strict";
 
-  var PAGE = window.PAGE;
   var app = document.getElementById("app");
-
-  if (!PAGE) {
-    app.innerHTML = '<div style="padding:3rem 1.5rem;font-family:sans-serif;">' +
-      '<h2>没有找到内容</h2><p>请检查 content.js 是否存在，并且定义了 window.PAGE。</p></div>';
-    return;
-  }
+  var players = []; // 已注册的音频播放器（声明要在 buildAudio 调用之前）
 
   /* ---------- 小工具 ---------- */
   function esc(s) {
@@ -52,122 +46,6 @@
     var s = Math.floor(sec % 60);
     return m + ":" + (s < 10 ? "0" : "") + s;
   }
-
-  /* ---------- 文档信息 ---------- */
-  var title = PAGE.siteTitle || "我的页面";
-  document.title = title;
-  var desc = PAGE.description || "";
-  document.querySelector('meta[name="description"]').setAttribute("content", desc);
-  document.querySelector('meta[property="og:title"]').setAttribute("content", title);
-  document.querySelector('meta[property="og:description"]').setAttribute("content", desc);
-  if (PAGE.hero && PAGE.hero.cover) {
-    document.querySelector('meta[property="og:image"]').setAttribute("content", PAGE.hero.cover);
-  }
-
-  /* ---------- 首屏 ---------- */
-  var hero = PAGE.hero || {};
-  var heroEl = document.getElementById("hero");
-  if (hero.cover) heroEl.style.backgroundImage = 'url("' + hero.cover + '")';
-  document.getElementById("heroKicker").textContent = hero.kicker || "";
-  document.getElementById("heroTitle").textContent = hero.title || title;
-  document.getElementById("heroSub").textContent = hero.subtitle || "";
-  document.getElementById("heroMeta").textContent = hero.meta || "";
-  if (!hero.kicker) document.getElementById("heroKicker").remove();
-  if (!hero.subtitle) document.getElementById("heroSub").remove();
-  if (!hero.meta) document.getElementById("heroMeta").remove();
-
-  /* ---------- 正文块 ---------- */
-  var content = document.getElementById("content");
-  var blocks = PAGE.blocks || [];
-  var players = []; // 已注册的音频播放器（声明要放在渲染之前，见 buildAudio）
-
-  // Markdown 路线：content.md 经 build.py 编译成整段 HTML
-  if (PAGE.html) {
-    content.innerHTML = PAGE.html;
-    Array.prototype.forEach.call(content.children, function (n) {
-      n.classList.add("reveal");
-    });
-    Array.prototype.forEach.call(
-      content.querySelectorAll(".block-audio[data-items]"),
-      function (box) {
-        JSON.parse(box.dataset.items).forEach(function (it) {
-          box.appendChild(buildAudio(it));
-        });
-        box.removeAttribute("data-items");
-      }
-    );
-  }
-
-  blocks.forEach(function (b) {
-    if (!b || !b.type) return;
-    var node = null;
-
-    switch (b.type) {
-
-      case "heading":
-        node = el(b.level === 3 ? "h3" : "h2", "", inline(b.text));
-        break;
-
-      case "text":
-        node = el("div", "block-text", paragraphs(b.text));
-        break;
-
-      case "quote":
-        node = el("blockquote", "block-quote",
-          inline(b.text) + (b.cite ? "<cite>" + esc(b.cite) + "</cite>" : ""));
-        break;
-
-      case "image":
-        node = el("figure", "block-figure",
-          '<a href="' + esc(b.src) + '" data-full="' + esc(b.src) + '" data-cap="' + esc(b.caption || "") + '">' +
-            '<img src="' + esc(b.src) + '" alt="' + esc(b.alt || "") + '" loading="lazy" decoding="async">' +
-          "</a>" +
-          (b.caption ? "<figcaption>" + esc(b.caption) + "</figcaption>" : ""));
-        break;
-
-      case "gallery":
-        node = el("div", "block-gallery");
-        (b.items || []).forEach(function (it) {
-          var a = el("a", "");
-          a.href = it.src;
-          a.dataset.full = it.src;
-          a.dataset.cap = it.caption || it.alt || "";
-          var img = new Image();
-          img.src = it.src;
-          img.alt = it.alt || it.caption || "";
-          img.loading = "lazy";
-          img.decoding = "async";
-          a.appendChild(img);
-          node.appendChild(a);
-        });
-        break;
-
-      case "audio":
-        node = el("div", "block-audio");
-        (b.items || []).forEach(function (it) { node.appendChild(buildAudio(it)); });
-        break;
-
-      case "divider":
-        node = el("hr", "block-hr");
-        break;
-
-      case "links":
-        node = el("div", "block-links");
-        (b.items || []).forEach(function (it) {
-          var a = el("a", "", esc(it.label || it.href));
-          a.href = it.href;
-          a.target = "_blank";
-          a.rel = "noopener";
-          node.appendChild(a);
-        });
-        break;
-    }
-
-    if (node) {
-      node.classList.add("reveal");
-      content.appendChild(node);
-    }
-  });
 
   /* ---------- 音频播放器 ---------- */
   function buildAudio(item) {
@@ -261,121 +139,266 @@
     return wrap;
   }
 
-  /* ---------- 页脚 ---------- */
-  var footer = PAGE.footer || {};
-  document.getElementById("footerNote").textContent = footer.note || "";
-  if (!footer.note) document.getElementById("footerNote").remove();
+  /* ---------- 页面渲染主体 ---------- */
+  function boot(PAGE) {
 
-  var qrbox = document.getElementById("qrbox");
-  if (footer.qr) {
-    var qrImg = document.getElementById("qrImg");
-    qrImg.addEventListener("load", function () { qrbox.hidden = false; });
-    qrImg.addEventListener("error", function () { qrbox.hidden = true; });
-    qrImg.src = footer.qr;
-    if (footer.qrNote) document.getElementById("qrNote").textContent = footer.qrNote;
-  }
+    /* 文档信息 */
+    var title = PAGE.siteTitle || "我的页面";
+    document.title = title;
+    var desc = PAGE.description || "";
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", desc);
+    var ogT = document.querySelector('meta[property="og:title"]');
+    if (ogT) ogT.setAttribute("content", title);
+    var ogD = document.querySelector('meta[property="og:description"]');
+    if (ogD) ogD.setAttribute("content", desc);
+    var ogI = document.querySelector('meta[property="og:image"]');
+    if (ogI && PAGE.hero && PAGE.hero.cover && PAGE.hero.cover.indexOf("blob:") !== 0) {
+      ogI.setAttribute("content", PAGE.hero.cover);
+    }
 
-  var toast = document.getElementById("toast");
-  var toastTimer = null;
-  function say(msg) {
-    toast.textContent = msg;
-    toast.hidden = false;
-    requestAnimationFrame(function () { toast.classList.add("is-on"); });
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () {
-      toast.classList.remove("is-on");
-      setTimeout(function () { toast.hidden = true; }, 260);
-    }, 1800);
-  }
+    /* 首屏 */
+    var hero = PAGE.hero || {};
+    var heroEl = document.getElementById("hero");
+    if (hero.cover) heroEl.style.backgroundImage = 'url("' + hero.cover + '")';
+    var hk = document.getElementById("heroKicker");
+    var ht = document.getElementById("heroTitle");
+    var hs = document.getElementById("heroSub");
+    var hm = document.getElementById("heroMeta");
+    if (hk) hk.textContent = hero.kicker || "";
+    if (ht) ht.textContent = hero.title || title;
+    if (hs) hs.textContent = hero.subtitle || "";
+    if (hm) hm.textContent = hero.meta || "";
+    if (hk && !hero.kicker) hk.remove();
+    if (hs && !hero.subtitle) hs.remove();
+    if (hm && !hero.meta) hm.remove();
 
-  var copyBtn = document.getElementById("copyBtn");
-  if (copyBtn) {
-    copyBtn.addEventListener("click", function () {
-      var url = location.href.split("#")[0];
-      if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-        navigator.share({ title: title, url: url }).catch(function () {});
-        return;
+    /* 正文 */
+    var content = document.getElementById("content");
+    var blocks = PAGE.blocks || [];
+
+    // Markdown 路线：content.md 经 build.py 编译成整段 HTML
+    if (PAGE.html) {
+      content.innerHTML = PAGE.html;
+      Array.prototype.forEach.call(content.children, function (n) {
+        n.classList.add("reveal");
+      });
+      Array.prototype.forEach.call(
+        content.querySelectorAll(".block-audio[data-items]"),
+        function (box) {
+          JSON.parse(box.dataset.items).forEach(function (it) {
+            box.appendChild(buildAudio(it));
+          });
+          box.removeAttribute("data-items");
+        }
+      );
+    }
+
+    blocks.forEach(function (b) {
+      if (!b || !b.type) return;
+      var node = null;
+
+      switch (b.type) {
+
+        case "heading":
+          node = el(b.level === 3 ? "h3" : "h2", "", inline(b.text));
+          break;
+
+        case "text":
+          node = el("div", "block-text", paragraphs(b.text));
+          break;
+
+        case "quote":
+          node = el("blockquote", "block-quote",
+            inline(b.text) + (b.cite ? "<cite>" + esc(b.cite) + "</cite>" : ""));
+          break;
+
+        case "image":
+          node = el("figure", "block-figure",
+            '<a href="' + esc(b.src) + '" data-full="' + esc(b.src) + '" data-cap="' + esc(b.caption || "") + '">' +
+              '<img src="' + esc(b.src) + '" alt="' + esc(b.alt || "") + '" loading="lazy" decoding="async">' +
+            "</a>" +
+            (b.caption ? "<figcaption>" + esc(b.caption) + "</figcaption>" : ""));
+          break;
+
+        case "gallery":
+          node = el("div", "block-gallery");
+          (b.items || []).forEach(function (it) {
+            var a = el("a", "");
+            a.href = it.src;
+            a.dataset.full = it.src;
+            a.dataset.cap = it.caption || it.alt || "";
+            var img = new Image();
+            img.src = it.src;
+            img.alt = it.alt || it.caption || "";
+            img.loading = "lazy";
+            img.decoding = "async";
+            a.appendChild(img);
+            node.appendChild(a);
+          });
+          break;
+
+        case "audio":
+          node = el("div", "block-audio");
+          (b.items || []).forEach(function (it) { node.appendChild(buildAudio(it)); });
+          break;
+
+        case "divider":
+          node = el("hr", "block-hr");
+          break;
+
+        case "links":
+          node = el("div", "block-links");
+          (b.items || []).forEach(function (it) {
+            var a = el("a", "", esc(it.label || it.href));
+            a.href = it.href;
+            a.target = "_blank";
+            a.rel = "noopener";
+            node.appendChild(a);
+          });
+          break;
       }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(function () { say("链接已复制"); },
-          function () { say("复制失败，请长按地址栏"); });
-      } else {
-        var t = document.createElement("textarea");
-        t.value = url;
-        document.body.appendChild(t);
-        t.select();
-        try { document.execCommand("copy"); say("链接已复制"); } catch (err) { say("复制失败，请长按地址栏"); }
-        t.remove();
+
+      if (node) {
+        node.classList.add("reveal");
+        content.appendChild(node);
       }
     });
-  }
 
-  /* ---------- 大图查看 ---------- */
-  var lb = document.getElementById("lightbox");
-  var lbImg = document.getElementById("lbImg");
-  var lbCap = document.getElementById("lbCap");
+    /* 页脚 */
+    var footer = PAGE.footer || {};
+    var footerNote = document.getElementById("footerNote");
+    if (footerNote) {
+      footerNote.textContent = footer.note || "";
+      if (!footer.note) footerNote.remove();
+    }
 
-  function openLightbox(src, cap) {
-    lbImg.src = src;
-    lbImg.alt = cap || "";
-    lbCap.textContent = cap || "";
-    lb.hidden = false;
-    document.body.style.overflow = "hidden";
-    requestAnimationFrame(function () { lb.classList.add("is-open"); });
-  }
-  function closeLightbox() {
-    lb.classList.remove("is-open");
-    document.body.style.overflow = "";
-    setTimeout(function () {
-      lb.hidden = true;
-      lbImg.removeAttribute("src");
-    }, 250);
-  }
+    var qrbox = document.getElementById("qrbox");
+    if (footer.qr && qrbox) {
+      var qrImg = document.getElementById("qrImg");
+      qrImg.addEventListener("load", function () { qrbox.hidden = false; });
+      qrImg.addEventListener("error", function () { qrbox.hidden = true; });
+      qrImg.src = footer.qr;
+    }
 
-  content.addEventListener("click", function (e) {
-    var a = e.target.closest("a[data-full]");
-    if (!a) return;
-    e.preventDefault();
-    openLightbox(a.dataset.full, a.dataset.cap);
-  });
+    /* toast */
+    var toast = document.getElementById("toast");
+    var toastTimer = null;
+    function say(msg) {
+      toast.textContent = msg;
+      toast.hidden = false;
+      requestAnimationFrame(function () { toast.classList.add("is-on"); });
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        toast.classList.remove("is-on");
+        setTimeout(function () { toast.hidden = true; }, 260);
+      }, 1800);
+    }
 
-  lb.addEventListener("click", function (e) {
-    if (e.target === lb || e.target.id === "lbClose") closeLightbox();
-  });
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && !lb.hidden) closeLightbox();
-  });
-
-  /* ---------- 进场动画 ---------- */
-  var reveals = document.querySelectorAll(".reveal");
-  if ("IntersectionObserver" in window) {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (en.isIntersecting) {
-          en.target.classList.add("is-in");
-          io.unobserve(en.target);
+    var copyBtn = document.getElementById("copyBtn");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", function () {
+        var url = location.href.split("#")[0].split("?")[0];
+        if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+          navigator.share({ title: title, url: url }).catch(function () {});
+          return;
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function () { say("链接已复制"); },
+            function () { say("复制失败，请长按地址栏"); });
+        } else {
+          var t = document.createElement("textarea");
+          t.value = url;
+          document.body.appendChild(t);
+          t.select();
+          try { document.execCommand("copy"); say("链接已复制"); } catch (err) { say("复制失败，请长按地址栏"); }
+          t.remove();
         }
       });
-    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.06 });
-    reveals.forEach(function (r) { io.observe(r); });
-  } else {
-    reveals.forEach(function (r) { r.classList.add("is-in"); });
+    }
+
+    /* 大图查看 */
+    var lb = document.getElementById("lightbox");
+    var lbImg = document.getElementById("lbImg");
+    var lbCap = document.getElementById("lbCap");
+
+    function openLightbox(src, cap) {
+      lbImg.src = src;
+      lbImg.alt = cap || "";
+      lbCap.textContent = cap || "";
+      lb.hidden = false;
+      document.body.style.overflow = "hidden";
+      requestAnimationFrame(function () { lb.classList.add("is-open"); });
+    }
+    function closeLightbox() {
+      lb.classList.remove("is-open");
+      document.body.style.overflow = "";
+      setTimeout(function () {
+        lb.hidden = true;
+        lbImg.removeAttribute("src");
+      }, 250);
+    }
+
+    content.addEventListener("click", function (e) {
+      var a = e.target.closest("a[data-full]");
+      if (!a) return;
+      e.preventDefault();
+      openLightbox(a.dataset.full, a.dataset.cap);
+    });
+
+    lb.addEventListener("click", function (e) {
+      if (e.target === lb || e.target.id === "lbClose") closeLightbox();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !lb.hidden) closeLightbox();
+    });
+
+    /* 进场动画 */
+    var reveals = document.querySelectorAll(".reveal");
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting) {
+            en.target.classList.add("is-in");
+            io.unobserve(en.target);
+          }
+        });
+      }, { rootMargin: "0px 0px -8% 0px", threshold: 0.06 });
+      reveals.forEach(function (r) { io.observe(r); });
+    } else {
+      reveals.forEach(function (r) { r.classList.add("is-in"); });
+    }
+
+    /* 阅读进度 */
+    var bar = document.getElementById("progressBar");
+    var ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () {
+        var h = document.documentElement;
+        var max = h.scrollHeight - h.clientHeight;
+        var p = max > 0 ? h.scrollTop / max : 0;
+        bar.style.transform = "scaleX(" + Math.min(1, Math.max(0, p)) + ")";
+        ticking = false;
+      });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
   }
 
-  /* ---------- 阅读进度 ---------- */
-  var bar = document.getElementById("progressBar");
-  var ticking = false;
-  function onScroll() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function () {
-      var h = document.documentElement;
-      var max = h.scrollHeight - h.clientHeight;
-      var p = max > 0 ? h.scrollTop / max : 0;
-      bar.style.transform = "scaleX(" + Math.min(1, Math.max(0, p)) + ")";
-      ticking = false;
-    });
+  /* ---------- 入口 ---------- */
+  var stub = window.PAGE;
+
+  if (!stub) {
+    app.innerHTML = '<div style="padding:3rem 1.5rem;font-family:sans-serif;">' +
+      '<h2>没有找到内容</h2><p>请检查 content.js 是否存在。</p></div>';
+    return;
   }
-  window.addEventListener("scroll", onScroll, { passive: true });
-  onScroll();
+
+  if (stub.locked && window.__unlock) {
+    window.__unlock(stub, boot);
+  } else {
+    boot(stub);
+  }
 })();

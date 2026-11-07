@@ -52,7 +52,25 @@
 
 <div class="toast" id="toast" hidden></div>
 
+<div class="lock" id="lock" hidden>
+  <div class="lock__card" id="lockCard">
+    <svg class="lock__icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3a4.5 4.5 0 0 0-4.5 4.5V10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1.5V7.5A4.5 4.5 0 0 0 12 3zm-2.5 4.5a2.5 2.5 0 0 1 5 0V10h-5V7.5zM12 13a1.6 1.6 0 0 1 .9 2.92V17.4a.9.9 0 0 1-1.8 0v-1.48A1.6 1.6 0 0 1 12 13z"/>
+    </svg>
+    <h2 class="lock__title">输入密码</h2>
+    <p class="lock__desc">这一页已加密，输入访问密码后即可查看。</p>
+    <form id="lockForm">
+      <input class="lock__input" id="lockInput" type="password"
+             autocomplete="off" inputmode="text" placeholder="访问密码">
+      <button class="lock__btn" id="lockBtn" type="submit">解锁</button>
+    </form>
+    <p class="lock__status" id="lockStatus" hidden></p>
+    <p class="lock__err" id="lockErr" hidden></p>
+  </div>
+</div>
+
 <script src="content.js"></script>
+<script src="js/crypto.js"></script>
 <script src="js/render.js"></script>
 </body>
 </html>

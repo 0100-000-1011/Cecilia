@@ -504,6 +504,93 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
 .toast[hidden] { display: none; }
 .toast.is-on { opacity: 1; transform: translate(-50%, 0); }
 
+/* ---------- 加密锁屏 ---------- */
+.lock {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: var(--paper);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.lock[hidden] { display: none; }
+.lock.is-open { opacity: 1; }
+.lock__card {
+  width: min(100%, 20rem);
+  padding: 2rem 1.6rem 1.7rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper-raise);
+  box-shadow: 0 24px 60px -32px rgba(28, 26, 23, 0.5);
+  text-align: center;
+}
+.lock__card.is-shake { animation: lockshake 0.4s; }
+@keyframes lockshake {
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(2px); }
+}
+.lock__icon { width: 30px; height: 30px; fill: var(--accent); opacity: 0.85; }
+.lock__title {
+  margin: 0.7rem 0 0.2rem;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.lock__desc {
+  margin: 0 0 1.2rem;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--ink-faint);
+}
+.lock__input {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+  text-align: center;
+  letter-spacing: 0.08em;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.lock__input:focus { border-color: var(--accent); }
+.lock__btn {
+  width: 100%;
+  margin-top: 0.7rem;
+  padding: 0.7rem;
+  border: 0;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+.lock__btn:hover { background: var(--accent); }
+.lock__btn:disabled { opacity: 0.55; cursor: default; }
+.lock__status {
+  margin: 0.9rem 0 0;
+  font-size: 0.76rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.lock__err {
+  margin: 0.7rem 0 0;
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+.lock__err.is-bad { font-weight: 500; }
+
 /* ---------- 进场动画 ---------- */
 .reveal {
   opacity: 0;

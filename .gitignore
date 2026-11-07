@@ -2,3 +2,5 @@
 *.aiff
 __pycache__/
 .github-token
+keys.txt
+.keys-state.json
