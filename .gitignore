@@ -1,3 +1,4 @@
 .DS_Store
 *.aiff
 __pycache__/
+.github-token
