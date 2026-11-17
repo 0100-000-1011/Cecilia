@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 把网址生成二维码，存到 assets/qr.png 和 assets/qr.svg。
-网页会自动在页脚显示 qr.png。
 
-默认样式：琥珀黄圆角模块 + 奶油底（圆点风）。
+样式：琥珀黄圆角模块 + 奶油底，定位框为大圆角同心环（与参考图逐像素对齐）。
+整个图是一次画出来的——直接按矩阵画圆角模块、颜色一次给上，
+不需要“先出黑白图再染色、再覆盖定位框”那套绕路。
 
 用法：
     python3 make_qr.py https://你的用户名.github.io/仓库名/
@@ -15,14 +16,13 @@
 """
 
 import argparse
+import math
 import os
 import sys
 
 try:
     import qrcode
     from qrcode.constants import ERROR_CORRECT_Q
-    from qrcode.image.styledpil import StyledPilImage
-    from qrcode.image.styles.moduledrawers.pil import RoundedModuleDrawer
     from PIL import Image, ImageDraw
 except ImportError:
     sys.exit("缺少依赖，先执行：python3 -m pip install -r requirements.txt")
@@ -30,83 +30,155 @@ except ImportError:
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, "assets")
 
-# 三个 7x7 定位框在矩阵中的原点（border 已含在矩阵里，border=3 时从 3 开始）
-FINDER_OFF = 7          # 定位框尺寸
-R_OUT, R_HOLE, R_IN = 3.0, 2.0, 1.4   # 外环 / 白圈 / 内芯的圆角（模块单位）
+# ---- 与参考图对齐的几何参数（单位：模块） ----
+RATIO = 0.95        # 数据模块自由角圆角 = RATIO * 0.5（0.5 = 正圆角）
+R_OUT = 1.90        # 定位框外环圆角
+R_HOLE = 1.15       # 定位框白圈圆角
+R_IN = 0.65         # 定位框内芯圆角
+SS = 4              # PNG 超采样倍数（先画 4 倍大再缩小，边缘平滑）
+FINDER = 7          # 定位框尺寸（模块）
 
 
-def finder_origins(n, border):
-    """返回三个定位框的矩阵坐标原点（假设 border>=3）"""
-    edge = n - border - FINDER_OFF
-    return [(border, border), (edge, border), (border, edge)]
+def finder_origins(n):
+    """三个定位框的矩阵坐标原点"""
+    return [(0, 0), (n - FINDER, 0), (0, n - FINDER)]
 
 
-def cell_path(x, y, r_tl, r_tr, r_br, r_bl):
-    """单个模块的圆角路径；四角半径可分别指定（0 = 直角）"""
-    d = "M%.2f,%.2f" % (x + r_tl, y)
-    d += "H%.2f" % (x + 1 - r_tr)
-    if r_tr:
-        d += "A%.2f,%.2f 0 0 1 %.2f,%.2f" % (r_tr, r_tr, x + 1, y + r_tr)
-    else:
-        d += "V%.2f" % (y + r_tr)
-    d += "V%.2f" % (y + 1 - r_br)
-    if r_br:
-        d += "A%.2f,%.2f 0 0 1 %.2f,%.2f" % (r_br, r_br, x + 1 - r_br, y + 1)
-    else:
-        d += "H%.2f" % (x + 1)
-    d += "H%.2f" % (x + r_bl)
-    if r_bl:
-        d += "A%.2f,%.2f 0 0 1 %.2f,%.2f" % (r_bl, r_bl, x, y + 1 - r_bl)
-    else:
-        d += "V%.2f" % (y + 1 - r_bl)
-    d += "V%.2f" % (y + r_tl)
+def _poly(x0, y0, s, r_tl, r_tr, r_br, r_bl, seg=18):
+    """单模块轮廓：四角圆角半径可分别指定（0 = 直角）"""
+    pts = []
+
+    def arc(cx, cy, r, a0, a1):
+        for i in range(seg + 1):
+            a = a0 + (a1 - a0) * i / seg
+            pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+
     if r_tl:
-        d += "A%.2f,%.2f 0 0 1 %.2f,%.2f" % (r_tl, r_tl, x + r_tl, y)
+        arc(x0 + r_tl, y0 + r_tl, r_tl, math.pi, 1.5 * math.pi)
     else:
-        d += "H%.2f" % x
-    return d + "Z"
+        pts.append((x0, y0))
+    if r_tr:
+        arc(x0 + s - r_tr, y0 + r_tr, r_tr, 1.5 * math.pi, 2 * math.pi)
+    else:
+        pts.append((x0 + s, y0))
+    if r_br:
+        arc(x0 + s - r_br, y0 + s - r_br, r_br, 0, 0.5 * math.pi)
+    else:
+        pts.append((x0 + s, y0 + s))
+    if r_bl:
+        arc(x0 + r_bl, y0 + s - r_bl, r_bl, 0.5 * math.pi, math.pi)
+    else:
+        pts.append((x0, y0 + s))
+    return pts
 
 
-def rounded_svg(matrix, dark, light, border):
-    """圆角模块 SVG：定位框画成大圆角同心环，其余模块邻居感知圆角（孤点成圆）"""
-    n = len(matrix)
+def render_png(matrix, box, dark, light, border):
+    """一次成图：圆角数据模块 + 大圆角定位框，颜色直接画上去"""
+    n = len(matrix)                     # 含 border
+    inner = n - 2 * border
+    size = n * box
+    big = size * SS
+
+    img = Image.new("RGB", (big, big), light)
+    d = ImageDraw.Draw(img)
+
+    fi = set()
+    for ox, oy in finder_origins(inner):
+        for yy in range(FINDER):
+            for xx in range(FINDER):
+                fi.add((border + ox + xx, border + oy + yy))
+
     dark_at = lambda x, y: 0 <= x < n and 0 <= y < n and matrix[y][x]
-    R, r = 0.5, 0.0  # 无邻居侧圆角半径 / 有邻居侧的小倒角
+    r_free = RATIO * 0.5 * box * SS
 
-    # 定位框覆盖范围（跳过这些格子，改画整体圆角环）
-    covered = set()
-    for ox, oy in finder_origins(n, border):
-        for yy in range(FINDER_OFF):
-            for xx in range(FINDER_OFF):
-                covered.add((ox + xx, oy + yy))
-
-    paths = []
-    for y, row in enumerate(matrix):
-        for x, cell in enumerate(row):
-            if not cell or (x, y) in covered:
+    for y in range(border, n - border):
+        for x in range(border, n - border):
+            if not matrix[y][x] or (x, y) in fi:
                 continue
             up, dn = dark_at(x, y - 1), dark_at(x, y + 1)
             lf, rt = dark_at(x - 1, y), dark_at(x + 1, y)
-            paths.append(cell_path(x, y,
-                                   R if (not up and not lf) else r,   # 左上
-                                   R if (not up and not rt) else r,   # 右上
-                                   R if (not dn and not rt) else r,   # 右下
-                                   R if (not dn and not lf) else r))  # 左下
+            d.polygon(_poly(
+                x * box * SS, y * box * SS, box * SS,
+                r_free if (not up and not lf) else 0,
+                r_free if (not up and not rt) else 0,
+                r_free if (not dn and not rt) else 0,
+                r_free if (not dn and not lf) else 0,
+            ), fill=dark)
 
-    # 定位框：外环(带白圈洞) + 内芯，用 evenodd 挖洞
-    def _rr_path(x0, y0, size, rad):
-        x1, y1 = x0 + size, y0 + size
-        d = "M%.2f,%.2f" % (x0 + rad, y0)
-        d += "H%.2f A%.2f,%.2f 0 0 1 %.2f,%.2f" % (x1 - rad, rad, rad, x1, y0 + rad)
-        d += "V%.2f A%.2f,%.2f 0 0 1 %.2f,%.2f" % (y1 - rad, rad, rad, x1 - rad, y1)
-        d += "H%.2f A%.2f,%.2f 0 0 1 %.2f,%.2f" % (x0 + rad, rad, rad, x0, y1 - rad)
-        d += "V%.2f A%.2f,%.2f 0 0 1 %.2f,%.2f" % (y0 + rad, rad, rad, x0 + rad, y0)
-        return d + "Z"
+    f = FINDER * box * SS
+    for ox, oy in finder_origins(inner):
+        x0, y0 = (border + ox) * box * SS, (border + oy) * box * SS
+        d.rounded_rectangle([x0, y0, x0 + f, y0 + f], radius=R_OUT * box * SS, fill=dark)
+        d.rounded_rectangle([x0 + box * SS, y0 + box * SS, x0 + f - box * SS, y0 + f - box * SS],
+                            radius=R_HOLE * box * SS, fill=light)
+        d.rounded_rectangle([x0 + 2 * box * SS, y0 + 2 * box * SS,
+                             x0 + f - 2 * box * SS, y0 + f - 2 * box * SS],
+                            radius=R_IN * box * SS, fill=dark)
 
-    for ox, oy in finder_origins(n, border):
-        paths.append(_rr_path(ox, oy, FINDER_OFF, R_OUT))          # 外环
-        paths.append(_rr_path(ox + 1, oy + 1, 5, R_HOLE))          # 白圈（洞）
-        paths.append(_rr_path(ox + 2, oy + 2, 3, R_IN))            # 内芯
+    return img.resize((size, size), Image.LANCZOS)
+
+
+def cell_path(x, y, r_tl, r_tr, r_br, r_bl):
+    """单模块 SVG 路径；四角半径可分别指定（0 = 直角）"""
+    d = "M%.3f,%.3f" % (x + r_tl, y)
+    d += "H%.3f" % (x + 1 - r_tr)
+    if r_tr:
+        d += "A%.3f,%.3f 0 0 1 %.3f,%.3f" % (r_tr, r_tr, x + 1, y + r_tr)
+    d += "V%.3f" % (y + 1 - r_br)
+    if r_br:
+        d += "A%.3f,%.3f 0 0 1 %.3f,%.3f" % (r_br, r_br, x + 1 - r_br, y + 1)
+    d += "H%.3f" % (x + r_bl)
+    if r_bl:
+        d += "A%.3f,%.3f 0 0 1 %.3f,%.3f" % (r_bl, r_bl, x, y + 1 - r_bl)
+    d += "V%.3f" % (y + r_tl)
+    if r_tl:
+        d += "A%.3f,%.3f 0 0 1 %.3f,%.3f" % (r_tl, r_tl, x + r_tl, y)
+    return d + "Z"
+
+
+def _rr_path(x0, y0, size, rad):
+    x1, y1 = x0 + size, y0 + size
+    p = "M%.3f,%.3f" % (x0 + rad, y0)
+    p += "H%.3f A%.3f,%.3f 0 0 1 %.3f,%.3f" % (x1 - rad, rad, rad, x1, y0 + rad)
+    p += "V%.3f A%.3f,%.3f 0 0 1 %.3f,%.3f" % (y1 - rad, rad, rad, x1 - rad, y1)
+    p += "H%.3f A%.3f,%.3f 0 0 1 %.3f,%.3f" % (x0 + rad, rad, rad, x0, y1 - rad)
+    p += "V%.3f A%.3f,%.3f 0 0 1 %.3f,%.3f" % (y0 + rad, rad, rad, x0 + rad, y0)
+    return p + "Z"
+
+
+def render_svg(matrix, dark, light, border):
+    """矢量版：与 PNG 同一套几何参数，印刷放大不糊"""
+    n = len(matrix)
+    inner = n - 2 * border
+    dark_at = lambda x, y: 0 <= x < n and 0 <= y < n and matrix[y][x]
+
+    covered = set()
+    for ox, oy in finder_origins(inner):
+        for yy in range(FINDER):
+            for xx in range(FINDER):
+                covered.add((border + ox + xx, border + oy + yy))
+
+    R = RATIO * 0.5
+    paths = []
+    for y in range(n):
+        for x in range(n):
+            if not dark_at(x, y) or (x, y) in covered:
+                continue
+            up, dn = dark_at(x, y - 1), dark_at(x, y + 1)
+            lf, rt = dark_at(x - 1, y), dark_at(x + 1, y)
+            paths.append(cell_path(
+                x, y,
+                R if (not up and not lf) else 0,
+                R if (not up and not rt) else 0,
+                R if (not dn and not rt) else 0,
+                R if (not dn and not lf) else 0,
+            ))
+
+    for ox, oy in finder_origins(inner):
+        ox, oy = ox + border, oy + border
+        paths.append(_rr_path(ox, oy, FINDER, R_OUT))
+        paths.append(_rr_path(ox + 1, oy + 1, FINDER - 2, R_HOLE))
+        paths.append(_rr_path(ox + 2, oy + 2, FINDER - 4, R_IN))
 
     return (
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %(n)d %(n)d" '
@@ -143,52 +215,25 @@ def main():
     )
     qr.add_data(url)
     qr.make(fit=True)
+    matrix = qr.get_matrix()
+
+    dark_rgb = tuple(int(args.dark[i:i + 2], 16) for i in (1, 3, 5))
+    light_rgb = tuple(int(args.light[i:i + 2], 16) for i in (1, 3, 5))
 
     png_path = os.path.join(ASSETS, args.name + ".png")
     svg_path = os.path.join(ASSETS, args.name + ".svg")
 
-    # PNG：圆角模块。这版 qrcode 的 StyledPilImage 会忽略颜色参数，
-    # 先生成黑白圆角图，再按明暗重新上色（LUT 插值，抗锯齿边缘同样平滑）
-    img = qr.make_image(
-        image_factory=StyledPilImage,
-        module_drawer=RoundedModuleDrawer(),
-    ).convert("RGB")
-    img.save(png_path)
-    dark_rgb = tuple(int(args.dark[i:i + 2], 16) for i in (1, 3, 5))
-    light_rgb = tuple(int(args.light[i:i + 2], 16) for i in (1, 3, 5))
-    lut = []
-    for d, l in zip(dark_rgb, light_rgb):
-        lut += [round(d + (l - d) * i / 255) for i in range(256)]
-    img = img.point(lut)  # LUT 重上色（返回新图，要接住）
-
-    # 三个定位框叠成大圆角同心环（这版 qrcode 没有独立的眼睛绘制器）。
-    # 注意底层绘制器画的定位框是方角，必须先用底色擦掉一块更大的圆角区域
-    b = args.box
-    d = ImageDraw.Draw(img)
-    for ox, oy in finder_origins(qr.modules_count + 2 * args.border, args.border):
-        x0, y0 = ox * b, oy * b
-        s = FINDER_OFF * b
-        d.rounded_rectangle([x0 - 2, y0 - 2, x0 + s + 2, y0 + s + 2],
-                            radius=b * 0.5, fill=light_rgb)  # 擦掉方角（小圆角，确保盖住角落）
-        d.rounded_rectangle([x0, y0, x0 + s, y0 + s], radius=R_OUT * b,
-                            fill=dark_rgb)   # 外环
-        g = b
-        d.rounded_rectangle([x0 + g, y0 + g, x0 + s - g, y0 + s - g],
-                            radius=R_HOLE * b, fill=light_rgb)  # 白圈
-        d.rounded_rectangle([x0 + 2 * g, y0 + 2 * g, x0 + s - 2 * g, y0 + s - 2 * g],
-                            radius=R_IN * b, fill=dark_rgb)     # 内芯
-    img.save(png_path)
-
-    # SVG：矢量圆角版，放大印刷不糊
+    img = render_png(matrix, args.box, dark_rgb, light_rgb, args.border)
+    img.save(png_path, optimize=True)
     with open(svg_path, "w", encoding="utf-8") as f:
-        f.write(rounded_svg(qr.get_matrix(), args.dark, args.light, args.border))
+        f.write(render_svg(matrix, args.dark, args.light, args.border))
 
     print("\n" + "=" * 46)
     qr.print_ascii(invert=True)
     print("=" * 46)
     print("网址 : " + url)
     print("模块 : %d x %d" % (qr.modules_count, qr.modules_count))
-    print("样式 : %s on %s（圆角模块）" % (args.dark, args.light))
+    print("样式 : %s on %s（圆角模块 + 大圆角定位框）" % (args.dark, args.light))
     print("图片 : assets/%s.png" % args.name)
     print("矢量 : assets/%s.svg  （印刷用，放大不糊）" % args.name)
     print("\n把改动 push 到 GitHub，页脚就会显示这张二维码。")
