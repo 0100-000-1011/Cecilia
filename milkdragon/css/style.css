@@ -98,7 +98,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 .hero__title {
   margin: 0;
   font-family: var(--display);
-  text-shadow: 0 2px 20px rgba(46, 32, 14, 0.38), 0 1px 3px rgba(46, 32, 14, 0.3);
+  text-shadow: 0 2px 4px rgba(30, 20, 8, 0.55), 0 8px 24px rgba(30, 20, 8, 0.45);
   font-size: clamp(2.1rem, 8.4vw, 3.4rem);
   font-weight: 600;
   line-height: 1.22;
@@ -523,13 +523,14 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   position: absolute;
   top: max(0.9rem, env(safe-area-inset-top));
   right: 0.9rem;
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 3rem;
+  height: 3rem;
   border: 0;
   border-radius: 50%;
   background: #ffc02e;
   color: #3f2d15;
-  font-size: 1.3rem;
+  font-size: 1.8rem;
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 8px 22px -8px rgba(0, 0, 0, 0.4);
@@ -575,14 +576,6 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 }
 .to-top.is-show { opacity: 1; transform: none; pointer-events: auto; }
 .to-top svg { width: 1.5rem; height: 1.5rem; }
-
-.footer-wave {
-  display: block;
-  width: 7rem;
-  margin: 0 auto 1.3rem;
-  fill: #ffc02e;
-  opacity: 0.8;
-}
 
 /* ---------- toast ---------- */
 .toast {
