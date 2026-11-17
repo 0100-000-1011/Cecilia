@@ -7,6 +7,7 @@ keys.txt
 
 # >>> protected (build.py auto-managed) <<<
 milkdragon/content.md
+milkdragon/content.local.js
 milkdragon/assets/*
 !milkdragon/assets/qr.png
 # <<< protected <<<

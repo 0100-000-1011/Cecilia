@@ -147,6 +147,7 @@ def write_gitignore(protected):
     if protected:
         block = [BLOCK_START,
                  "%s/content.md" % FOLDER,
+                 "%s/content.local.js" % FOLDER,
                  "%s/assets/*" % FOLDER,
                  "!%s/assets/qr.png" % FOLDER,
                  BLOCK_END]
@@ -330,6 +331,13 @@ def build_protected(page, refs):
         with open(enc_path, "wb") as fh:
             fh.write(seal(raw, data))
         manifest.append({"p": f, "f": enc_rel, "t": mime_of(f)})
+
+    # 本地明文副本：双击 index.html（file://）时直接显示，不走密码。
+    # 只留在本地——gitignore 里已排除，永远不会上传
+    with open(os.path.join(HERE, "content.local.js"), "w", encoding="utf-8") as f:
+        f.write("/* 本地明文副本（build.py 自动生成，不上传云端）——"
+                "改内容请编辑 content.md 后重新 build */\nwindow.PAGE = "
+                + json.dumps(page, ensure_ascii=False, indent=2) + ";\n")
 
     # 整页（含 manifest）→ enc/page.enc
     page["manifest"] = manifest
