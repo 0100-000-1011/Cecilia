@@ -354,12 +354,12 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 /* 分隔（Markdown 的 <hr> 与旧版块流都覆盖） */
 .prose hr,
 .block-hr {
-  margin: 3.4rem auto;
-  width: 4rem;
+  margin: 3.4rem 0;
+  width: 100%;
   height: 2px;
   border: 0;
   border-radius: 1px;
-  background: rgba(255, 181, 46, 0.55);
+  background: rgba(255, 181, 46, 0.45);
 }
 
 /* 底部按钮 */
