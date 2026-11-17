@@ -23,11 +23,22 @@ try:
     from qrcode.constants import ERROR_CORRECT_Q
     from qrcode.image.styledpil import StyledPilImage
     from qrcode.image.styles.moduledrawers.pil import RoundedModuleDrawer
+    from PIL import Image, ImageDraw
 except ImportError:
     sys.exit("缺少依赖，先执行：python3 -m pip install -r requirements.txt")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, "assets")
+
+# 三个 7x7 定位框在矩阵中的原点（border 已含在矩阵里，border=3 时从 3 开始）
+FINDER_OFF = 7          # 定位框尺寸
+R_OUT, R_HOLE, R_IN = 2.2, 1.6, 1.1   # 外环 / 白圈 / 内芯的圆角（模块单位）
+
+
+def finder_origins(n, border):
+    """返回三个定位框的矩阵坐标原点（假设 border>=3）"""
+    edge = n - border - FINDER_OFF
+    return [(border, border), (edge, border), (border, edge)]
 
 
 def cell_path(x, y, r_tl, r_tr, r_br, r_bl):
@@ -56,15 +67,23 @@ def cell_path(x, y, r_tl, r_tr, r_br, r_bl):
     return d + "Z"
 
 
-def rounded_svg(matrix, dark, light):
-    """邻居感知的圆角模块 SVG：孤点成圆点，相连模块圆角衔接（贴近参考样式）"""
+def rounded_svg(matrix, dark, light, border):
+    """圆角模块 SVG：定位框画成大圆角同心环，其余模块邻居感知圆角（孤点成圆）"""
     n = len(matrix)
     dark_at = lambda x, y: 0 <= x < n and 0 <= y < n and matrix[y][x]
     R, r = 0.5, 0.0  # 无邻居侧圆角半径 / 有邻居侧的小倒角
+
+    # 定位框覆盖范围（跳过这些格子，改画整体圆角环）
+    covered = set()
+    for ox, oy in finder_origins(n, border):
+        for yy in range(FINDER_OFF):
+            for xx in range(FINDER_OFF):
+                covered.add((ox + xx, oy + yy))
+
     paths = []
     for y, row in enumerate(matrix):
         for x, cell in enumerate(row):
-            if not cell:
+            if not cell or (x, y) in covered:
                 continue
             up, dn = dark_at(x, y - 1), dark_at(x, y + 1)
             lf, rt = dark_at(x - 1, y), dark_at(x + 1, y)
@@ -73,11 +92,27 @@ def rounded_svg(matrix, dark, light):
                                    R if (not up and not rt) else r,   # 右上
                                    R if (not dn and not rt) else r,   # 右下
                                    R if (not dn and not lf) else r))  # 左下
+
+    # 定位框：外环(带白圈洞) + 内芯，用 evenodd 挖洞
+    def _rr_path(x0, y0, size, rad):
+        x1, y1 = x0 + size, y0 + size
+        d = "M%.2f,%.2f" % (x0 + rad, y0)
+        d += "H%.2f A%.2f,%.2f 0 0 1 %.2f,%.2f" % (x1 - rad, rad, rad, x1, y0 + rad)
+        d += "V%.2f A%.2f,%.2f 0 0 1 %.2f,%.2f" % (y1 - rad, rad, rad, x1 - rad, y1)
+        d += "H%.2f A%.2f,%.2f 0 0 1 %.2f,%.2f" % (x0 + rad, rad, rad, x0, y1 - rad)
+        d += "V%.2f A%.2f,%.2f 0 0 1 %.2f,%.2f" % (y0 + rad, rad, rad, x0 + rad, y0)
+        return d + "Z"
+
+    for ox, oy in finder_origins(n, border):
+        paths.append(_rr_path(ox, oy, FINDER_OFF, R_OUT))          # 外环
+        paths.append(_rr_path(ox + 1, oy + 1, 5, R_HOLE))          # 白圈（洞）
+        paths.append(_rr_path(ox + 2, oy + 2, 3, R_IN))            # 内芯
+
     return (
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %(n)d %(n)d" '
         'width="%(mm).1fmm" height="%(mm).1fmm">'
         '<rect width="%(n)d" height="%(n)d" fill="%(light)s"/>'
-        '<path d="%(path)s" fill="%(dark)s"/>'
+        '<path fill-rule="evenodd" d="%(path)s" fill="%(dark)s"/>'
         "</svg>\n"
         % {"n": n, "mm": n * 1.0, "light": light, "dark": dark,
            "path": "".join(paths)}
@@ -124,11 +159,26 @@ def main():
     lut = []
     for d, l in zip(dark_rgb, light_rgb):
         lut += [round(d + (l - d) * i / 255) for i in range(256)]
-    img.point(lut).save(png_path)
+    img = img.point(lut)  # LUT 重上色（返回新图，要接住）
+
+    # 三个定位框叠成大圆角同心环（这版 qrcode 没有独立的眼睛绘制器）
+    b = args.box
+    d = ImageDraw.Draw(img)
+    for ox, oy in finder_origins(qr.modules_count + 2 * args.border, args.border):
+        x0, y0 = ox * b, oy * b
+        s = FINDER_OFF * b
+        d.rounded_rectangle([x0, y0, x0 + s, y0 + s], radius=R_OUT * b,
+                            fill=dark_rgb)   # 外环
+        g = b
+        d.rounded_rectangle([x0 + g, y0 + g, x0 + s - g, y0 + s - g],
+                            radius=R_HOLE * b, fill=light_rgb)  # 白圈
+        d.rounded_rectangle([x0 + 2 * g, y0 + 2 * g, x0 + s - 2 * g, y0 + s - 2 * g],
+                            radius=R_IN * b, fill=dark_rgb)     # 内芯
+    img.save(png_path)
 
     # SVG：矢量圆角版，放大印刷不糊
     with open(svg_path, "w", encoding="utf-8") as f:
-        f.write(rounded_svg(qr.get_matrix(), args.dark, args.light))
+        f.write(rounded_svg(qr.get_matrix(), args.dark, args.light, args.border))
 
     print("\n" + "=" * 46)
     qr.print_ascii(invert=True)
