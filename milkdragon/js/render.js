@@ -52,7 +52,7 @@
     var wrap = el("div", "audio-item");
     wrap.innerHTML =
       '<button class="audio-btn" type="button" aria-label="播放">' +
-        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5v13l10-6.5z" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>' +
       "</button>" +
       '<div class="audio-main">' +
         '<div class="audio-title">' + esc(item.title || "录音") + "</div>" +
@@ -72,8 +72,8 @@
     var fill = wrap.querySelector(".audio-fill");
     var time = wrap.querySelector(".audio-time");
 
-    var ICON_PLAY = '<path d="M8 5v14l11-7z"/>';
-    var ICON_PAUSE = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+    var ICON_PLAY = '<path d="M9 5.5v13l10-6.5z" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>';
+    var ICON_PAUSE = '<path d="M8.6 6v12M15.4 6v12" fill="none" stroke="currentColor" stroke-width="3.8" stroke-linecap="round"/>';
 
     function setIcon(paused) {
       btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' +

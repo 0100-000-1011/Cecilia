@@ -294,7 +294,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: var(--accent);
+  background: #ffc02e; /* 亮琥珀，与二维码同色 */
   color: #3f2d15;
   cursor: pointer;
   transition: background 0.25s, transform 0.18s var(--ease);
@@ -306,7 +306,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.14); }
 }
-.audio-btn svg { width: 15px; height: 15px; fill: currentColor; }
+.audio-btn svg { width: 17px; height: 17px; fill: currentColor; }
 
 .audio-main { flex: 1 1 auto; min-width: 0; }
 .audio-title {
