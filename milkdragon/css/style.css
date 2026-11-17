@@ -47,7 +47,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 .progress {
   position: fixed;
   inset: 0 0 auto 0;
-  height: 2px;
+  height: 3px;
   z-index: 60;
   background: transparent;
   pointer-events: none;
@@ -58,7 +58,8 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   width: 100%;
   transform: scaleX(0);
   transform-origin: 0 50%;
-  background: var(--accent);
+  background: #ffc02e;
+  border-radius: 2px;
   will-change: transform;
 }
 
@@ -172,6 +173,17 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 /* 列表 / 代码 / 表格（Markdown 生成） */
 .prose ul,
 .prose ol { margin: 0; padding-left: 1.5em; }
+.prose ul { list-style: none; padding-left: 1.7em; }
+.prose ul > li { position: relative; }
+.prose ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.6em;
+  top: 0.5em;
+  width: 1em;
+  height: 0.75em;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 24'%3E%3Cg fill='%23ffb52e'%3E%3Cellipse cx='16' cy='17' rx='9' ry='6.5'/%3E%3Cellipse cx='5.5' cy='8.5' rx='3' ry='4'/%3E%3Cellipse cx='12.3' cy='5' rx='3' ry='4'/%3E%3Cellipse cx='19.7' cy='5' rx='3' ry='4'/%3E%3Cellipse cx='26.5' cy='8.5' rx='3' ry='4'/%3E%3C/g%3E%3C/svg%3E") no-repeat left center / contain;
+}
 .prose li + li { margin-top: 0.35em; }
 .prose li > p { margin: 0; }
 .prose code {
@@ -206,6 +218,15 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 .prose th { font-weight: 600; }
 
 /* 引文 */
+.block-quote::before {
+  content: "\201C";
+  display: block;
+  font-family: var(--display);
+  font-size: 2.4rem;
+  line-height: 0.5;
+  color: rgba(255, 181, 46, 0.85);
+  margin: 0.4rem 0 0.4rem;
+}
 .block-quote {
   margin: 2.4rem 0;
   padding: 0.2rem 0 0.2rem 1.25rem;
@@ -229,7 +250,8 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 .block-figure img {
   width: 100%;
   height: auto;
-  border-radius: 3px;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px -22px rgba(180, 114, 7, 0.55);
   background: rgba(122, 92, 48, 0.08);
   cursor: zoom-in;
 }
@@ -252,7 +274,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 .block-gallery a {
   display: block;
   overflow: hidden;
-  border-radius: 3px;
+  border-radius: 12px;
   background: rgba(122, 92, 48, 0.08);
   cursor: zoom-in;
 }
@@ -448,6 +470,20 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 }
 .copybtn:hover { border-color: var(--accent); color: var(--accent-ink); }
 
+.footer-dino {
+  display: block;
+  width: 3rem;
+  margin: 0 auto 0.7rem;
+}
+.sig-dino {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+  vertical-align: -0.35em;
+  margin-right: 0.3rem;
+}
+.footer__sig { display: flex; align-items: center; }
 .footer__note {
   margin: 1.4rem 0 0;
   font-size: 0.8rem;
@@ -510,6 +546,31 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   line-height: 1;
   cursor: pointer;
 }
+
+/* ---------- 返回顶部 ---------- */
+.to-top {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(1.3rem + env(safe-area-inset-bottom));
+  z-index: 90;
+  width: 2.9rem;
+  height: 2.9rem;
+  border: 0;
+  border-radius: 50%;
+  background: #ffc02e;
+  color: #3f2d15;
+  box-shadow: 0 10px 26px -10px rgba(180, 114, 7, 0.6);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.to-top.is-show { opacity: 1; transform: none; pointer-events: auto; }
+.to-top svg { width: 1.5rem; height: 1.5rem; }
 
 /* ---------- toast ---------- */
 .toast {
@@ -617,6 +678,10 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 }
 .lock__err.is-bad { font-weight: 500; }
 
+/* ---------- 图片淡入 ---------- */
+.prose img { opacity: 0; transition: opacity 0.5s; }
+.prose img.is-loaded { opacity: 1; }
+
 /* ---------- 进场动画 ---------- */
 .reveal {
   opacity: 0;
@@ -631,6 +696,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .reveal { opacity: 1; transform: none; transition: none; }
+  .prose img { opacity: 1; transition: none; }
   .lightbox, .lightbox img { transition: none; }
 }
 

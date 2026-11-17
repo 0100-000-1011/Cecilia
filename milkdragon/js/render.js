@@ -192,6 +192,10 @@
           box.removeAttribute("data-items");
         }
       );
+      // 已在缓存里的图片不会触发 load 事件，手动补淡入
+      Array.prototype.forEach.call(content.querySelectorAll("img"), function (im) {
+        if (im.complete) im.classList.add("is-loaded");
+      });
     }
 
     blocks.forEach(function (b) {
@@ -385,6 +389,25 @@
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
+  }
+
+  /* ---------- 图片淡入（捕获阶段接收不冒泡的 load） ---------- */
+  document.addEventListener("load", function (e) {
+    var t = e.target;
+    if (t && t.tagName === "IMG") t.classList.add("is-loaded");
+  }, true);
+
+  /* ---------- 返回顶部 ---------- */
+  var toTop = document.getElementById("toTop");
+  if (toTop) {
+    var heroEl = document.getElementById("hero");
+    window.addEventListener("scroll", function () {
+      toTop.classList.toggle("is-show",
+        window.scrollY > (heroEl ? heroEl.offsetHeight * 0.5 : 600));
+    }, { passive: true });
+    toTop.addEventListener("click", function () {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
   }
 
   /* ---------- 入口 ---------- */

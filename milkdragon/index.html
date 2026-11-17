@@ -40,13 +40,14 @@
     <div class="qrbox" id="qrbox" hidden>
       <img id="qrImg" alt="本页二维码" width="132" height="132" loading="lazy">
       <div class="qrbox__text">
-        <strong>扫码打开这一页</strong>
+        <strong>扫码打开这一页 ✨</strong>
         <span id="qrNote">手机相机对着二维码扫一下即可。</span>
         <button class="copybtn" id="copyBtn" type="button">复制链接</button>
       </div>
     </div>
+    <img class="footer-dino" src="assets/dino.png" alt="" aria-hidden="true">
     <p class="footer__note" id="footerNote"></p>
-    <p class="footer__sig">Made with GitHub Pages</p>
+    <p class="footer__sig"><img class="sig-dino" src="assets/dino.png" alt="" aria-hidden="true">Made with GitHub Pages</p>
   </footer>
 </article>
 
@@ -55,6 +56,13 @@
   <img id="lbImg" alt="">
   <p id="lbCap"></p>
 </div>
+
+<button class="to-top" id="toTop" type="button" aria-label="回到顶部">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" stroke-width="3"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
 
 <div class="toast" id="toast" hidden></div>
 
