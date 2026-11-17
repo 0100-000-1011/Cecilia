@@ -553,7 +553,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   transition: transform 0.15s;
 }
 .lightbox__close:active { transform: scale(0.9); }
-.lightbox__close svg { width: 1.05rem; height: 1.05rem; display: block; }
+.lightbox__close svg { width: 1.4rem; height: 1.4rem; display: block; }
 
 /* ---------- 滚动条（桌面） ---------- */
 @media (pointer: fine) {
