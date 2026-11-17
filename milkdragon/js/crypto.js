@@ -76,6 +76,7 @@
       try { localStorage.removeItem(storeKey); } catch (e) {}
       els.input.value = "";
       lockMsg("", false);
+      els.status.hidden = true;   // 清掉上次的"完成"字样
       lockBusy(false);
       els.btn.textContent = "解锁";
       showLock();
