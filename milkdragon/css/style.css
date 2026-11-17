@@ -544,7 +544,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   border: 0;
   border-radius: 50%;
   background: #ffc02e;
-  color: #3f2d15;
+  color: #fff6df; /* 奶黄箭头 */
   box-shadow: 0 10px 26px -10px rgba(180, 114, 7, 0.6);
   display: grid;
   place-items: center;
