@@ -88,5 +88,20 @@
 <script src="content.local.js"></script>
 <script src="js/crypto.js"></script>
 <script src="js/render.js"></script>
+<script>
+/* 加载动画保险丝：不管脚本新旧，锁屏出现或内容渲染后必定收起 */
+(function () {
+  var n = 0;
+  var t = setInterval(function () {
+    var b = document.getElementById("bootLoader");
+    var done = !b || document.querySelector(".lock.is-open") ||
+               (document.getElementById("content") && document.getElementById("content").childElementCount > 0);
+    if (done || ++n > 20) {
+      clearInterval(t);
+      if (b) { b.classList.add("is-done"); setTimeout(function () { b.remove(); }, 350); }
+    }
+  }, 300);
+})();
+</script>
 </body>
 </html>
