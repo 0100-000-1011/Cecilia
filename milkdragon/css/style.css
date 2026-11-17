@@ -392,14 +392,14 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   padding: 1.1rem;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: var(--paper-raise);
+  background: #fff9ec; /* 与二维码底色一致，直接融合 */
 }
 .qrbox img {
   flex: 0 0 auto;
   width: 104px;
   height: 104px;
-  border-radius: 10px;
-  background: var(--paper-raise);
+  border-radius: 0; /* 底色相同，无需圆角描边 */
+  background: transparent;
 }
 .qrbox__text {
   display: flex;

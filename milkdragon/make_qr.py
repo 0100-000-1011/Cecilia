@@ -161,12 +161,15 @@ def main():
         lut += [round(d + (l - d) * i / 255) for i in range(256)]
     img = img.point(lut)  # LUT 重上色（返回新图，要接住）
 
-    # 三个定位框叠成大圆角同心环（这版 qrcode 没有独立的眼睛绘制器）
+    # 三个定位框叠成大圆角同心环（这版 qrcode 没有独立的眼睛绘制器）。
+    # 注意底层绘制器画的定位框是方角，必须先用底色擦掉一块更大的圆角区域
     b = args.box
     d = ImageDraw.Draw(img)
     for ox, oy in finder_origins(qr.modules_count + 2 * args.border, args.border):
         x0, y0 = ox * b, oy * b
         s = FINDER_OFF * b
+        d.rounded_rectangle([x0 - 2, y0 - 2, x0 + s + 2, y0 + s + 2],
+                            radius=b * 0.5, fill=light_rgb)  # 擦掉方角（小圆角，确保盖住角落）
         d.rounded_rectangle([x0, y0, x0 + s, y0 + s], radius=R_OUT * b,
                             fill=dark_rgb)   # 外环
         g = b
