@@ -489,7 +489,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   background: none;
   margin-left: 0.3rem;
   padding: 0.1rem;
-  vertical-align: 0.02em;
+  vertical-align: 0.1em;
   font-size: 1rem;
   line-height: 1;
   cursor: pointer;
