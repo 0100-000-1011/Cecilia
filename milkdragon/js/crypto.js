@@ -67,7 +67,7 @@
 
   /* 重新上锁：清掉本机缓存密钥，回到输密码界面 */
   var relockBtn = document.getElementById("relockBtn");
-  if (relockBtn) {
+  if (relockBtn && !(window.PAGE && !window.PAGE.locked)) {  // 本地明文直开时隐藏
     relockBtn.addEventListener("click", function () {
       try { localStorage.removeItem(storeKey); } catch (e) {}
       els.input.value = "";

@@ -498,6 +498,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   transition: opacity 0.2s, transform 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
+.relock[hidden] { display: none; }
 .relock:hover { opacity: 1; }
 .relock:active { transform: scale(0.85); }
 
