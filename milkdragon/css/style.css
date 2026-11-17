@@ -351,7 +351,8 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   letter-spacing: 0.02em;
 }
 
-/* 分隔 */
+/* 分隔（Markdown 的 <hr> 与旧版块流都覆盖） */
+.prose hr,
 .block-hr {
   margin: 3.4rem auto;
   width: 4rem;

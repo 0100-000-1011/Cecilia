@@ -32,7 +32,7 @@ ASSETS = os.path.join(HERE, "assets")
 
 # 三个 7x7 定位框在矩阵中的原点（border 已含在矩阵里，border=3 时从 3 开始）
 FINDER_OFF = 7          # 定位框尺寸
-R_OUT, R_HOLE, R_IN = 2.2, 1.6, 1.1   # 外环 / 白圈 / 内芯的圆角（模块单位）
+R_OUT, R_HOLE, R_IN = 3.0, 2.0, 1.4   # 外环 / 白圈 / 内芯的圆角（模块单位）
 
 
 def finder_origins(n, border):
