@@ -66,6 +66,9 @@
   var els = {};
 
   /* 重新上锁：清掉本机缓存密钥，回到输密码界面 */
+  var currentAccess = null;   // 当前 access.json（重新上锁后重新验证用）
+  var relockReunlock = null;  // 验证通过后的"解密并渲染"入口
+
   var relockBtn = document.getElementById("relockBtn");
   if (relockBtn && !(window.PAGE && !window.PAGE.locked)) {
     relockBtn.hidden = false;  // 加密模式才显示（本地明文直开保持隐藏）
@@ -73,7 +76,20 @@
       try { localStorage.removeItem(storeKey); } catch (e) {}
       els.input.value = "";
       lockMsg("", false);
+      lockBusy(false);
+      els.btn.textContent = "解锁";
       showLock();
+      if (!currentAccess) { location.reload(); return; }
+      // 重挂表单提交：验证通过 → 重新解密渲染
+      els.form.onsubmit = function (ev) {
+        ev.preventDefault();
+        var pw = els.input.value;
+        if (!pw) { lockMsg("请输入密码", true); return; }
+        tryPassword(pw, currentAccess).then(function (raw) {
+          if (raw && relockReunlock) relockReunlock(raw);
+        });
+      };
+      setTimeout(function () { els.input.focus(); }, 350);
     });
   }
 
@@ -173,7 +189,18 @@
       return;
     }
 
+    function unlockWith(raw) {
+      return decryptAll(raw).then(function (page) { hideLock(); cb(page); });
+    }
+    relockReunlock = function (raw) {
+      unlockWith(raw).catch(function (e) {
+        console.error(e);
+        fail("解密失败：" + (e && e.message ? e.message : "未知错误"));
+      });
+    };
+
     fetchJSON("access.json").then(function (access) {
+      currentAccess = access;
       if (!access) {
         fail("没有找到 access.json —— 请先运行 python3 build.py 并部署");
         return;
@@ -206,9 +233,7 @@
         });
       }
 
-      ready.then(function (raw) { return decryptAll(raw); })
-        .then(function (page) { hideLock(); cb(page); })
-        .catch(function (e) {
+      ready.then(unlockWith).catch(function (e) {
           console.error(e);
           fail("解密失败：" + (e && e.message ? e.message : "未知错误"));
         });
