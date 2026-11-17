@@ -686,6 +686,8 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 }
 .lock__btn:hover { background: var(--accent); }
 .lock__btn:disabled { opacity: 0.55; cursor: default; }
+.lock__status[hidden],
+.lock__status:empty { display: none; }
 .lock__status {
   margin: 0.9rem 0 0;
   font-size: 0.76rem;

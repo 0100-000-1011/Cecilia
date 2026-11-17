@@ -96,6 +96,7 @@
 
   function showLock() {
     if (window.__hideLoader) window.__hideLoader();
+    if (els.status) { els.status.textContent = ""; els.status.hidden = true; }
     els.lock.hidden = false;
     requestAnimationFrame(function () { els.lock.classList.add("is-open"); });
     setTimeout(function () { els.input.focus(); }, 350);
