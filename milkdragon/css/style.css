@@ -543,11 +543,9 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   height: 2.9rem;
   border: 0;
   border-radius: 50%;
-  background: rgba(255, 252, 242, 0.92); /* 奶白底，小清新 */
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  color: #ffb52e; /* 琥珀箭头 */
-  box-shadow: 0 8px 24px -12px rgba(180, 114, 7, 0.45);
+  background: #ffd75e; /* 柔和亮黄，介于琥珀和奶白之间 */
+  color: #a8720f; /* 深琥珀箭头，看得清又不硬 */
+  box-shadow: 0 8px 24px -12px rgba(180, 114, 7, 0.55);
   transition: opacity 0.3s, transform 0.3s var(--ease), background 0.3s;
 }
 .to-top:active { transform: scale(0.92); }
