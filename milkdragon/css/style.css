@@ -4,6 +4,7 @@
    ========================================================================== */
 
 :root {
+  --display: "Yuanti SC", "YouYuan", "MiSans", "PingFang SC", "Microsoft YaHei", sans-serif;
   --paper: #fff6df;
   --paper-raise: #fffcf2;
   --ink: #3f2d15;
@@ -27,7 +28,7 @@ html {
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #fff1cf 0%, var(--paper) 34%, var(--paper) 100%);
+  background: linear-gradient(180deg, #fff1cf 0%, var(--paper) 260px, var(--paper) 100%);
   color: var(--ink);
   font-family: var(--sans);
   font-size: 17px;
@@ -38,6 +39,8 @@ body {
 }
 
 img { display: block; max-width: 100%; }
+::selection { background: #ffd75e; color: #3f2d15; }
+
 a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 3px; }
 
 /* ---------- 顶部阅读进度 ---------- */
@@ -81,7 +84,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   width: 100%;
   max-width: 44rem;
   margin: 0 auto;
-  padding: 0 1.35rem calc(2.6rem + env(safe-area-inset-bottom));
+  padding: 0 1.35rem calc(4.4rem + env(safe-area-inset-bottom));
   color: #fdfaf5;
 }
 .hero__kicker {
@@ -93,7 +96,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 }
 .hero__title {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: clamp(2.1rem, 8.4vw, 3.4rem);
   font-weight: 600;
   line-height: 1.22;
@@ -115,6 +118,21 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   color: rgba(253, 250, 245, 0.6);
 }
 
+.hero-wave {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+.hero-wave svg {
+  display: block;
+  width: 100%;
+  height: 42px;
+  fill: var(--paper);
+}
+
 /* ---------- 正文 ---------- */
 .prose {
   max-width: 36rem;
@@ -131,7 +149,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 
 .prose h2,
 .prose h3 {
-  font-family: var(--serif);
+  font-family: var(--display);
   font-weight: 600;
   letter-spacing: 0.02em;
   line-height: 1.4;
@@ -143,11 +161,10 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 .prose h3::before {
   content: "";
   display: block;
-  width: 1.6rem;
-  height: 2px;
-  background: var(--accent);
-  opacity: 0.55;
-  margin-bottom: 0.85rem;
+  width: 1.5rem;
+  height: 1.1rem;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 24'%3E%3Cg fill='%23ffb52e'%3E%3Cellipse cx='16' cy='17' rx='9' ry='6.5'/%3E%3Cellipse cx='5.5' cy='8.5' rx='3' ry='4'/%3E%3Cellipse cx='12.3' cy='5' rx='3' ry='4'/%3E%3Cellipse cx='19.7' cy='5' rx='3' ry='4'/%3E%3Cellipse cx='26.5' cy='8.5' rx='3' ry='4'/%3E%3C/g%3E%3C/svg%3E") no-repeat left bottom / contain;
+  margin-bottom: 0.55rem;
 }
 
 .prose strong { font-weight: 600; }
@@ -260,8 +277,9 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   gap: 0.85rem;
   padding: 0.85rem 1rem;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 20px;
   background: var(--paper-raise);
+  box-shadow: 0 10px 30px -20px rgba(180, 114, 7, 0.5);
   transition: border-color 0.3s, box-shadow 0.3s;
 }
 .audio-item.is-playing {
@@ -276,14 +294,18 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--accent);
+  color: #3f2d15;
   cursor: pointer;
   transition: background 0.25s, transform 0.18s var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
 .audio-btn:active { transform: scale(0.94); }
-.audio-item.is-playing .audio-btn { background: var(--accent); color: #3f2d15; }
+.audio-item.is-playing .audio-btn { background: var(--accent); color: #3f2d15; animation: btn-bounce 0.85s ease-in-out infinite; }
+@keyframes btn-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.14); }
+}
 .audio-btn svg { width: 15px; height: 15px; fill: currentColor; }
 
 .audio-main { flex: 1 1 auto; min-width: 0; }
@@ -393,8 +415,9 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   gap: 1.1rem;
   padding: 1.1rem;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 20px;
   background: #fff9ec; /* 与二维码底色一致，直接融合 */
+  box-shadow: 0 10px 30px -20px rgba(180, 114, 7, 0.5);
 }
 .qrbox img {
   flex: 0 0 auto;
@@ -526,7 +549,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   width: min(100%, 20rem);
   padding: 2rem 1.6rem 1.7rem;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 22px;
   background: var(--paper-raise);
   box-shadow: 0 24px 60px -32px rgba(122, 92, 48, 0.4);
   text-align: center;
@@ -541,7 +564,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 .lock__icon { width: 30px; height: 30px; fill: var(--accent); opacity: 0.85; }
 .lock__title {
   margin: 0.7rem 0 0.2rem;
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: 1.25rem;
   font-weight: 600;
 }
@@ -615,7 +638,7 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 @media (min-width: 700px) {
   body { font-size: 17.5px; }
   .hero { min-height: 62vh; }
-  .hero__inner { padding: 0 2rem 3.2rem; }
+  .hero__inner { padding: 0 2rem 4.8rem; }
   .prose { padding: 4.2rem 2rem 1rem; }
   .footer { padding: 2rem 2rem 4.5rem; }
   .block-gallery { grid-template-columns: repeat(3, 1fr); }

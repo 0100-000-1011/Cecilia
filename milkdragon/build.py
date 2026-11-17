@@ -150,6 +150,7 @@ def write_gitignore(protected):
                  "%s/content.local.js" % FOLDER,
                  "%s/assets/*" % FOLDER,
                  "!%s/assets/qr.png" % FOLDER,
+                 "!%s/assets/favicon.png" % FOLDER,
                  BLOCK_END]
         out = [l for l in out if l.strip()] + [""] + block + [""]
     with open(GITIGNORE_PATH, "w", encoding="utf-8") as f:
