@@ -148,6 +148,18 @@
       lockMsg(msg, true);
     }
 
+    // file:// 双击打开时浏览器禁止 fetch 本地文件，加密内容无法加载——直接给清晰指引
+    if (location.protocol === "file:") {
+      showLock();
+      lockBusy(false);
+      els.btn.textContent = "我已起好本地服务，重试";
+      els.form.onsubmit = function (ev) { ev.preventDefault(); location.reload(); };
+      lockMsg("双击打开的本地文件无法加载加密内容（浏览器安全限制）。" +
+        "预览请在 milkdragon 目录运行 python3 -m http.server 8000，" +
+        "然后访问 http://localhost:8000/；或者直接打开线上网址。", true);
+      return;
+    }
+
     fetchJSON("access.json").then(function (access) {
       if (!access) {
         fail("没有找到 access.json —— 请先运行 python3 build.py 并部署");
