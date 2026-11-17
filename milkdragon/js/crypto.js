@@ -65,6 +65,17 @@
   /* ---------- 锁屏 ---------- */
   var els = {};
 
+  /* 重新上锁：清掉本机缓存密钥，回到输密码界面 */
+  var relockBtn = document.getElementById("relockBtn");
+  if (relockBtn) {
+    relockBtn.addEventListener("click", function () {
+      try { localStorage.removeItem(storeKey); } catch (e) {}
+      els.input.value = "";
+      lockMsg("", false);
+      showLock();
+    });
+  }
+
   function showLock() {
     if (window.__hideLoader) window.__hideLoader();
     els.lock.hidden = false;
