@@ -489,8 +489,8 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
   background: none;
   margin-left: 0.3rem;
   padding: 0.1rem;
-  vertical-align: 0.005em;
-  font-size: 1rem;
+  vertical-align: 0;
+  font-size: 0.67rem;
   line-height: 1;
   cursor: pointer;
   opacity: 0.75;
