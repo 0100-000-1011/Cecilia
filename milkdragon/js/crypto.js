@@ -66,6 +66,7 @@
   var els = {};
 
   function showLock() {
+    if (window.__hideLoader) window.__hideLoader();
     els.lock.hidden = false;
     requestAnimationFrame(function () { els.lock.classList.add("is-open"); });
     setTimeout(function () { els.input.focus(); }, 350);

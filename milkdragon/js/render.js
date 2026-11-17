@@ -410,18 +410,28 @@
     });
   }
 
+  /* ---------- 收起加载动画 ---------- */
+  function hideLoader() {
+    var bl = document.getElementById("bootLoader");
+    if (bl) { bl.classList.add("is-done"); setTimeout(function () { bl.remove(); }, 350); }
+  }
+
   /* ---------- 入口 ---------- */
   var stub = window.PAGE;
 
   if (!stub) {
     app.innerHTML = '<div style="padding:3rem 1.5rem;font-family:sans-serif;">' +
       '<h2>没有找到内容</h2><p>请检查 content.js 是否存在。</p></div>';
+    hideLoader();
     return;
   }
+
+  window.__hideLoader = hideLoader;
 
   if (stub.locked && window.__unlock) {
     window.__unlock(stub, boot);
   } else {
     boot(stub);
+    hideLoader();
   }
 })();
