@@ -417,6 +417,11 @@
   }
 
   /* ---------- 入口 ---------- */
+  // 刷新后总是回到顶部：加密页是异步渲染的，浏览器记忆的滚动位置
+  // 会套在"还没长高"的页面上，恢复出错误的偏移
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  window.scrollTo(0, 0);
+
   var stub = window.PAGE;
 
   if (!stub) {
