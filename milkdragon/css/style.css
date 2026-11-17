@@ -355,9 +355,10 @@ a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-off
 .block-hr {
   margin: 3.4rem auto;
   width: 4rem;
-  height: 1px;
+  height: 2px;
   border: 0;
-  background: var(--line);
+  border-radius: 1px;
+  background: rgba(255, 181, 46, 0.55);
 }
 
 /* 底部按钮 */
