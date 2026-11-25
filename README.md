@@ -95,6 +95,8 @@ meta: 文 / 图 / 声音 · Eason
 footer_note: …           # 页脚说明
 ```
 
+> 分享卡片的图不走 `cover`（cover 及全部照片只留本地、线上加密不可直链），用的是 `assets/og.jpg`（1200×630，已入库）。想换分享图就重新生成这张：`sips -z 630 630 assets/piggy.jpg --out assets/og.jpg && sips -p 630 1200 --padColor FFF6DF assets/og.jpg`，它随 build.py 的白名单保留在 git 里。爬虫不执行 JS，所以 `og:image` 必须是 index.html 里写死的**绝对地址**。
+
 **正文**就是标准 Markdown，另有三条约定：
 
 | 写法 | 效果 |

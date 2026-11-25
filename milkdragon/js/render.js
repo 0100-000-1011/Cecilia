@@ -153,9 +153,8 @@
     var ogD = document.querySelector('meta[property="og:description"]');
     if (ogD) ogD.setAttribute("content", desc);
     var ogI = document.querySelector('meta[property="og:image"]');
-    if (ogI && PAGE.hero && PAGE.hero.cover && PAGE.hero.cover.indexOf("blob:") !== 0) {
-      ogI.setAttribute("content", PAGE.hero.cover);
-    }
+    /* 运行时覆盖 og:image 没意义（爬虫不执行 JS），反而会把静态页写好的
+       绝对地址换成相对路径——原样保留，让爬虫抓到 assets/og.jpg */
 
     /* 首屏 */
     var hero = PAGE.hero || {};

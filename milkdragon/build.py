@@ -167,6 +167,7 @@ def write_gitignore(protected):
                  "!%s/assets/qr.png" % FOLDER,
                  "!%s/assets/favicon.png" % FOLDER,
                  "!%s/assets/dino.png" % FOLDER,
+                 "!%s/assets/og.jpg" % FOLDER,   # 分享卡片用图，爬虫要能直接抓到
                  BLOCK_END]
         out = [l for l in out if l.strip()] + [""] + block + [""]
     with open(GITIGNORE_PATH, "w", encoding="utf-8") as f:
@@ -694,7 +695,15 @@ def build_protected(page, refs):
     save_state(state)
 
     write_gitignore(protected=True)
-    git_untrack([FOLDER + "/content.md", FOLDER + "/assets"])
+    # 只把受保护的文件移出索引：assets 下的例外文件（qr/favicon/dino/og）
+    # 要留在仓库里，整个目录一起 rm 会把它们也删掉，全靠 deploy 的 add -A 兜底
+    keep = {"qr.png", "favicon.png", "dino.png", "og.jpg"}
+    assets_dir = os.path.join(ROOT, FOLDER, "assets")
+    untrack = [FOLDER + "/content.md"]
+    if os.path.isdir(assets_dir):
+        untrack += [os.path.join(FOLDER, "assets", fn).replace(os.sep, "/")
+                    for fn in os.listdir(assets_dir) if fn not in keep]
+    git_untrack(untrack)
 
     n = sum(os.path.getsize(os.path.join(dp, fn)) for dp, _, fns in os.walk(enc_dir)
             for fn in fns)
