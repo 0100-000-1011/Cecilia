@@ -90,7 +90,7 @@
           if (raw && relockReunlock) relockReunlock(raw);
         });
       };
-      setTimeout(function () { els.input.focus(); }, 350);
+      setTimeout(focusInput, 350);
     });
   }
 
@@ -98,15 +98,18 @@
     if (window.__hideLoader) window.__hideLoader();
     if (els.status) { els.status.textContent = ""; els.status.hidden = true; }
     els.lock.hidden = false;
-    // 锁屏期间别让底层页面跟着键盘滚走，否则解锁后停在半截位置
-    document.body.style.overflow = "hidden";
     requestAnimationFrame(function () { els.lock.classList.add("is-open"); });
-    setTimeout(function () { els.input.focus(); }, 350);
+    setTimeout(focusInput, 350);
   }
   function hideLock() {
     els.lock.classList.remove("is-open");
-    document.body.style.overflow = "";
     setTimeout(function () { els.lock.hidden = true; }, 300);
+  }
+  // preventScroll：别让浏览器为了"把输入框露出来"去滚页面，
+  // 那个偏移在解锁后会留下来，首屏就不是最顶端了
+  function focusInput() {
+    try { els.input.focus({ preventScroll: true }); }
+    catch (e) { els.input.focus(); }
   }
   function lockMsg(text, bad) {
     els.err.textContent = text;

@@ -421,22 +421,32 @@
   }
 
   /* ---------- 回到最顶端 ---------- */
-  // html 上有 scroll-behavior:smooth，直接 scrollTo 会变成动画，动画途中
-  // 页面还在长高（懒加载图片、字体替换），经常停在半路。这里临时关掉平滑过渡。
-  // 只纠正"贴近顶部"的小偏移：用户已经开始往下读就别抢滚动。
+  // 解锁时键盘会让移动浏览器把页面（或可视视口）顶下去一点，解锁后要拉回来，
+  // 否则首屏一打开就是"已经缩上去"的样子，顶部回弹效果看不到。
+  // · 临时关掉 html 的 scroll-behavior:smooth，否则回顶是动画、会被后续布局顶回半路
+  // · 连续几拍重试，因为懒加载图片/字体会继续改变文档高度
+  // · 用户一旦自己动了（触摸/滚轮/按键）立刻收手，绝不抢滚动
   function resetToTop() {
+    var active = true;
+    function stop() { active = false; }
+    ["touchstart", "wheel", "keydown"].forEach(function (ev) {
+      window.addEventListener(ev, stop, { passive: true, once: true });
+    });
     function jump() {
-      if (window.scrollY > 200) return;
+      if (!active) return;
       var h = document.documentElement;
       var prev = h.style.scrollBehavior;
       h.style.scrollBehavior = "auto";
+      // 先 1px 再回 0：iOS 键盘收起后可视视口有时停在旧偏移，这一下能把视口拽回来
+      window.scrollTo(0, 1);
       window.scrollTo(0, 0);
+      if (document.body) document.body.scrollTop = 0;
+      h.scrollTop = 0;
       h.style.scrollBehavior = prev;
     }
     jump();
     requestAnimationFrame(jump);
-    setTimeout(jump, 120);
-    setTimeout(jump, 450);
+    [60, 200, 400, 700, 1100].forEach(function (t) { setTimeout(jump, t); });
   }
 
   /* ---------- 入口 ---------- */
