@@ -86,8 +86,8 @@ python3 make_qr.py https://<你的用户名>.github.io/my-page/
 **头部配置**（`---` 之间）：
 
 ```yaml
-title: 秋日手记          # 标签页标题 + 大标题
-description: …           # 分享卡片描述
+title: 冬日手记          # 标签页标题 + 大标题 + 分享卡片标题
+description: …           # 分享卡片描述（爬虫读静态 HTML，build 会自动同步进 index.html）
 cover: assets/piggy.jpg  # 首屏大图
 kicker: 2026 · 十一月     # 标题上方小字
 subtitle: 第一行\n第二行   # 副标题，\n 换行

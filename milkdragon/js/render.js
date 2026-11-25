@@ -358,9 +358,12 @@
       if (e.key === "Escape" && !lb.hidden) closeLightbox();
     });
 
+    /* 回到最顶端：解锁前键盘/地址栏把页面顶下去一点，等布局稳定再纠正，
+       否则首屏一上来就是"已经缩上去"的状态，得往上拉才有回弹效果 */
+    resetToTop();
+
     /* 进场动画 */
-    var reveals = document.querySelectorAll(".reveal");
-    if ("IntersectionObserver" in window) {
+    var reveals = document.querySelectorAll(".reveal");    if ("IntersectionObserver" in window) {
       var io = new IntersectionObserver(function (entries) {
         entries.forEach(function (en) {
           if (en.isIntersecting) {
@@ -415,6 +418,25 @@
   function hideLoader() {
     var bl = document.getElementById("bootLoader");
     if (bl) { bl.classList.add("is-done"); setTimeout(function () { bl.remove(); }, 350); }
+  }
+
+  /* ---------- 回到最顶端 ---------- */
+  // html 上有 scroll-behavior:smooth，直接 scrollTo 会变成动画，动画途中
+  // 页面还在长高（懒加载图片、字体替换），经常停在半路。这里临时关掉平滑过渡。
+  // 只纠正"贴近顶部"的小偏移：用户已经开始往下读就别抢滚动。
+  function resetToTop() {
+    function jump() {
+      if (window.scrollY > 200) return;
+      var h = document.documentElement;
+      var prev = h.style.scrollBehavior;
+      h.style.scrollBehavior = "auto";
+      window.scrollTo(0, 0);
+      h.style.scrollBehavior = prev;
+    }
+    jump();
+    requestAnimationFrame(jump);
+    setTimeout(jump, 120);
+    setTimeout(jump, 450);
   }
 
   /* ---------- 入口 ---------- */

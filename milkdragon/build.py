@@ -740,8 +740,34 @@ def build_public(page, missing):
         print("⚠️  有 %d 个引用的文件不存在，记得放进 assets/ 再推送" % len(missing))
 
 
+def sync_head(page):
+    """把 index.html 里分享卡片用的 meta 同步成 content.md 头部配置。
+    爬虫只读静态 HTML、不执行 JS，所以这些值只能写死在文件里；两边各写一份
+    迟早会不一致（卡片副标题跟 description 对不上就是这个原因）。"""
+    path = os.path.join(HERE, "index.html")
+    if not os.path.exists(path):
+        return
+    src = open(path, encoding="utf-8").read()
+    title = page.get("siteTitle", "")
+    desc = page.get("description", "")
+    out = src
+    targets = [("name", "description", desc),
+               ("property", "og:title", title),
+               ("property", "og:description", desc),
+               ("name", "twitter:title", title),
+               ("name", "twitter:description", desc)]
+    for attr, key, val in targets:
+        pat = re.compile(r'(<meta\s+%s="%s"\s+content=")([^"]*)(")'
+                         % (attr, re.escape(key)))
+        out = pat.sub(lambda m: m.group(1) + esc(val) + m.group(3), out)
+    if out != src:
+        open(path, "w", encoding="utf-8").write(out)
+        print("✎ index.html 的分享卡片文案已同步 content.md")
+
+
 def main():
     page, refs, missing = compile_page()
+    sync_head(page)
     if read_keys().get(FOLDER, "").strip():
         build_protected(page, refs)
     else:

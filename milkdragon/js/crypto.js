@@ -98,11 +98,14 @@
     if (window.__hideLoader) window.__hideLoader();
     if (els.status) { els.status.textContent = ""; els.status.hidden = true; }
     els.lock.hidden = false;
+    // 锁屏期间别让底层页面跟着键盘滚走，否则解锁后停在半截位置
+    document.body.style.overflow = "hidden";
     requestAnimationFrame(function () { els.lock.classList.add("is-open"); });
     setTimeout(function () { els.input.focus(); }, 350);
   }
   function hideLock() {
     els.lock.classList.remove("is-open");
+    document.body.style.overflow = "";
     setTimeout(function () { els.lock.hidden = true; }, 300);
   }
   function lockMsg(text, bad) {
@@ -192,7 +195,12 @@
     }
 
     function unlockWith(raw) {
-      return decryptAll(raw).then(function (page) { hideLock(); cb(page); });
+      return decryptAll(raw).then(function (page) {
+        // 先收键盘再渲染：键盘弹着时 iOS 会把视口往下推，渲染完就停在半截
+        try { els.input.blur(); } catch (e) {}
+        hideLock();
+        cb(page);
+      });
     }
     relockReunlock = function (raw) {
       unlockWith(raw).catch(function (e) {
