@@ -165,10 +165,10 @@
     var ht = document.getElementById("heroTitle");
     var hs = document.getElementById("heroSub");
     var hm = document.getElementById("heroMeta");
-    if (hk) hk.textContent = hero.kicker || "";
+    if (hk) hk.innerHTML = hero.kicker || "";
     if (ht) ht.textContent = hero.title || title;
-    if (hs) hs.textContent = hero.subtitle || "";
-    if (hm) hm.textContent = hero.meta || "";
+    if (hs) hs.innerHTML = hero.subtitle || "";
+    if (hm) hm.innerHTML = hero.meta || "";
     if (hk && !hero.kicker) hk.remove();
     if (hs && !hero.subtitle) hs.remove();
     if (hm && !hero.meta) hm.remove();
@@ -222,7 +222,7 @@
             '<a href="' + esc(b.src) + '" data-full="' + esc(b.src) + '" data-cap="' + esc(b.caption || "") + '">' +
               '<img src="' + esc(b.src) + '" alt="' + esc(b.alt || "") + '" loading="lazy" decoding="async">' +
             "</a>" +
-            (b.caption ? "<figcaption>" + esc(b.caption) + "</figcaption>" : ""));
+            (b.caption ? "<figcaption>" + esc(b.caption).replace(/\\n/g, "<br>") + "</figcaption>" : ""));
           break;
 
         case "gallery":
@@ -273,7 +273,7 @@
     var footer = PAGE.footer || {};
     var footerNote = document.getElementById("footerNote");
     if (footerNote) {
-      footerNote.textContent = footer.note || "";
+      footerNote.innerHTML = footer.note || "";
       if (!footer.note) footerNote.remove();
     }
 
@@ -328,8 +328,9 @@
 
     function openLightbox(src, cap) {
       lbImg.src = src;
-      lbImg.alt = cap || "";
-      lbCap.textContent = cap || "";
+      lbImg.alt = (cap || "").replace(/<[^>]*>/g, "").replace(/\\n/g, " ");
+      // data-cap 里可能是 build 预转换好的 HTML（<br>、微信表情 <img>），按 HTML 渲染
+      lbCap.innerHTML = (cap || "").replace(/\\n/g, "<br>");
       lb.hidden = false;
       document.body.style.overflow = "hidden";
       requestAnimationFrame(function () { lb.classList.add("is-open"); });
@@ -351,7 +352,8 @@
     });
 
     lb.addEventListener("click", function (e) {
-      if (e.target === lb || e.target.id === "lbClose") closeLightbox();
+      // 点叉叉时 target 其实是里面的 svg/path，得用 closest 往上找
+      if (e.target === lb || e.target.closest("#lbClose")) closeLightbox();
     });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && !lb.hidden) closeLightbox();
